@@ -841,7 +841,10 @@ function run(args: string[]): { code: number; out: string[] } {
   rows.sort((a, b) => Buffer.compare(Buffer.from(a.key), Buffer.from(b.key)));
   const outLines = rows.map((r) => r.line);
   if (!check) {
-    for (const p of tree.now.keys()) {
+    // Write in byte order of the paths, as the starter did: a deletion of a path must land before a
+    // creation under it, or mkdir fails on the file the patch deletes (SPEC.md section 10: when none
+    // failed, every change is written).
+    for (const p of [...tree.now.keys()].sort((a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b)))) {
       const was = tree.original(p);
       const now = tree.now.get(p)!;
       if (was === now) continue;
